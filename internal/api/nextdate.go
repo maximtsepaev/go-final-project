@@ -20,7 +20,7 @@ func afterNow(date, now time.Time) bool {
 
 // Функция для вычисления следующей даты повторения задачи
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
-	var repeatSplit []string
+	var parts []string
 	var date time.Time
 
 	if repeat == "" {
@@ -32,15 +32,18 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		return "", err
 	}
 
-	repeatSplit = strings.Split(repeat, " ")
+	parts = strings.Split(repeat, " ")
 
-	switch repeatSplit[0] {
+	switch parts[0] {
 	case "d":
-		if len(repeatSplit) < 2 {
+		if len(parts) < 2 {
 			return "", InvalidRepeatError
 		}
 
-		interval, _ := strconv.Atoi(repeatSplit[1])
+		interval, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return "", InvalidRepeatError
+		}
 
 		if interval > 400 {
 			return "", fmt.Errorf("interval for daily repeat is too large")
@@ -64,8 +67,102 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		}
 		return date.Format(DateFormat), nil
 
+	case "w":
+		if len(parts) < 2 {
+			return "", InvalidRepeatError
+		}
+
+		days := []time.Weekday{}
+		slice := strings.Split(parts[1], ",")
+
+		for _, day := range slice {
+			dayInt, err := strconv.Atoi(day)
+			if err != nil {
+				return "", InvalidRepeatError
+			}
+
+			if dayInt < 1 || dayInt > 7 {
+				return "", InvalidRepeatError
+			}
+
+			days = append(days, time.Weekday(dayInt%7))
+		}
+
+		for {
+			date = date.AddDate(0, 0, 1)
+
+			for _, day := range days {
+				if date.Weekday() == day && afterNow(date, now) {
+					return date.Format(DateFormat), nil
+				}
+			}
+		}
+
+	case "m":
+		if len(parts) < 2 {
+			return "", InvalidRepeatError
+		}
+		var days [32]bool
+		var months [13]bool
+		var lastDay bool
+		var preLastDay bool
+		var useMonths bool
+
+		dlist := strings.Split(parts[1], ",")
+		for _, d := range dlist {
+			dayInt, err := strconv.Atoi(d)
+			if err != nil {
+				return "", InvalidRepeatError
+			}
+
+			switch {
+			case dayInt == -1:
+				lastDay = true
+			case dayInt == -2:
+				preLastDay = true
+			case dayInt >= 1 && dayInt <= 31:
+				days[dayInt] = true
+			default:
+				return "", InvalidRepeatError
+			}
+		}
+
+		if len(parts) == 3 {
+			useMonths = true
+			mlist := strings.Split(parts[2], ",")
+			for _, m := range mlist {
+				monthInt, err := strconv.Atoi(m)
+				if err != nil {
+					return "", InvalidRepeatError
+				}
+
+				if monthInt > 0 && monthInt < 13 {
+					months[monthInt] = true
+				} else {
+					return "", InvalidRepeatError
+				}
+			}
+		}
+
+		for {
+			date = date.AddDate(0, 0, 1)
+			day := date.Day()
+			last := time.Date(date.Year(), date.Month()+1, 0, 0, 0, 0, 0, time.UTC).Day()
+
+			if !afterNow(date, now) {
+				continue
+			}
+			if useMonths && !months[int(date.Month())] {
+				continue
+			}
+
+			if days[day] || (lastDay && day == last) || (preLastDay && day == last-1) {
+				return date.Format(DateFormat), nil
+			}
+		}
+
 	default:
-		return "", fmt.Errorf("unknown repeat type: %s", repeatSplit[0])
+		return "", fmt.Errorf("unknown repeat type: %s", parts[0])
 	}
 }
 
