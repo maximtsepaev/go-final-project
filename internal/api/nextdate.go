@@ -2,16 +2,17 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
 
-var EmptyStringError = errors.New("empty string")
-var InvalidRepeatError = errors.New("invalid repeat format")
-var InvalidDateError = errors.New("invalid date format")
+var (
+	EmptyStringError   = errors.New("empty string")
+	InvalidRepeatError = errors.New("invalid repeat format")
+	InvalidDateError   = errors.New("invalid date format")
+)
 
 // Функция для определения, находится ли дата после текущей
 func afterNow(date, now time.Time) bool {
@@ -46,7 +47,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		}
 
 		if interval > 400 {
-			return "", fmt.Errorf("interval for daily repeat is too large")
+			return "", errors.New("interval for daily repeat is too large")
 		}
 
 		for {
@@ -104,9 +105,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		}
 		var days [32]bool
 		var months [13]bool
-		var lastDay bool
-		var preLastDay bool
-		var useMonths bool
+		var lastDay, preLastDay, useMonths bool
 
 		dlist := strings.Split(parts[1], ",")
 		for _, d := range dlist {
@@ -162,16 +161,11 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		}
 
 	default:
-		return "", fmt.Errorf("unknown repeat type: %s", parts[0])
+		return "", errors.New("unknown repeat type")
 	}
 }
 
 func HandleNextDate(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	date := r.FormValue("date")
 	repeat := r.FormValue("repeat")
 	now := r.FormValue("now")
@@ -182,7 +176,6 @@ func HandleNextDate(w http.ResponseWriter, r *http.Request) {
 
 	nextDate, err := NextDate(nowTime, date, repeat)
 	if err != nil {
-		// ДОБАВИТЬ УДАЛЕНИЕ ИЗ БД
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

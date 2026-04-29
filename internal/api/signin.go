@@ -16,13 +16,14 @@ type signInInput struct {
 
 func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 	var input signInInput
+
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request body"})
 		return
 	}
 
 	password := os.Getenv("TODO_PASSWORD")
-	if password == "" {
+	if len(password) == 0 {
 		writeJSON(w, http.StatusOK, map[string]string{"token": "noauth"})
 		return
 	}

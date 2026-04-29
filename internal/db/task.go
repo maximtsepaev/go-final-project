@@ -1,7 +1,7 @@
 package db
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 )
 
@@ -178,7 +178,7 @@ func UpdateTask(task *Task) error {
 	}
 
 	if count == 0 {
-		return fmt.Errorf("Неверный ID задачи")
+		return errors.New("Неверный ID задачи")
 	}
 
 	return nil
@@ -204,7 +204,7 @@ func UpdateDate(task *Task) error {
 	}
 
 	if count == 0 {
-		return fmt.Errorf("Неверный ID задачи")
+		return errors.New("Неверный ID задачи")
 	}
 
 	return nil
@@ -227,7 +227,7 @@ func DeleteTask(id string) error {
 	}
 
 	if count == 0 {
-		return fmt.Errorf("Неверный ID задачи")
+		return errors.New("Неверный ID задачи")
 	}
 
 	return nil
