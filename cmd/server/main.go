@@ -2,27 +2,38 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/maximtsepaev/go-final-project/internal/db"
+	"github.com/maximtsepaev/go-final-project/internal/logger"
 	"github.com/maximtsepaev/go-final-project/internal/server"
 )
 
-// main инициализирует базу данных и стартует сервер.
+// main инициализирует логгер, базу данных и стартует сервер.
 func main() {
+	// Инициализация логгера, только system logs, нет смысла логировать в файл
+	appLogger := logger.InitLogger()
+	slog.SetDefault(appLogger)
+
+	slog.Info("app starting")
+
 	// Инициализация базы данных
 	// В будущем будет использоваться PostgreSQL, сделаю после защиты
 	dbFile := os.Getenv("TODO_DBFILE")
 	if dbFile == "" {
 		dbFile = "./scheduler.db"
 	}
+
+	slog.Info("initializing", "db_file", dbFile) // Нет смысла использовать slog.With
 	if err := db.InitDB(dbFile); err != nil {
-		log.Fatal("error initializing database:", err)
+		slog.Error("database init failed", "error", err)
+		os.Exit(1)
 	}
 
 	// Запуск HTTP-сервера
 	if err := server.Run(); err != nil {
-		log.Fatal("error starting server:", err)
+		slog.Error("server start failed", "error", err)
+		os.Exit(1)
 	}
 }

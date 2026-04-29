@@ -3,6 +3,7 @@ package db
 
 import (
 	"errors"
+	"log/slog"
 
 	"github.com/jmoiron/sqlx"
 
@@ -40,6 +41,8 @@ func InitDB(dbFile string) error {
 	if _, err = DB.Exec(sqlSchema); err != nil {
 		return err
 	}
+
+	slog.Info("database initialized successfully")
 
 	return nil
 }

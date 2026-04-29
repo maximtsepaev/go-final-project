@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -20,6 +21,8 @@ const DateFormat = "20060102"
 
 // Init регистрирует маршруты API и раздачу статических файлов.
 func Init(r chi.Router) {
+	slog.Info("routes initialized", "static_dir", webDir)
+
 	r.Get("/api/nextdate", HandleNextDate)
 	r.With(auth).Get("/api/tasks", HandleGetTasks)
 	r.Post("/api/signin", HandleSignIn)

@@ -2,6 +2,7 @@
 package server
 
 import (
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -15,6 +16,8 @@ func Run() error {
 	if port == "" {
 		port = "7540"
 	}
+
+	slog.Info("starting", "port", port)
 
 	r := chi.NewRouter() // Роутер для обработки HTTP-запросов
 	api.Init(r)
