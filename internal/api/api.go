@@ -13,7 +13,7 @@ const DateFormat = "20060102" // Формат даты для хранения �
 func Init(r chi.Router) {
 	r.Get("/api/nextdate", HandleNextDate)
 	r.Get("/api/tasks", HandleGetTasks)
-
+	r.Post("/api/signin", HandleSignIn)
 	// Роут для разных методов на одном пути
 	r.Route("/api/task", func(r chi.Router) {
 		r.Post("/", HandleAddTask)
