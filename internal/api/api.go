@@ -1,8 +1,10 @@
+// Package api содержит HTTP-обработчики и маршруты планировщика задач.
 package api
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -11,9 +13,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const webDir = "./web"        // Путь к директории с веб-ресурсами (HTML, CSS, JS)
-const DateFormat = "20060102" // Формат даты для хранения и обработки (ГГГГММДД)
+const webDir = "./web" // Путь к директории с веб-ресурсами (HTML, CSS, JS)
 
+// DateFormat задает формат даты для хранения и обработки (ГГГГММДД).
+const DateFormat = "20060102"
+
+// Init регистрирует маршруты API и раздачу статических файлов.
 func Init(r chi.Router) {
 	r.Get("/api/nextdate", HandleNextDate)
 	r.With(auth).Get("/api/tasks", HandleGetTasks)
@@ -29,12 +34,22 @@ func Init(r chi.Router) {
 		r.Delete("/", HandleDeleteTask)
 	})
 
+	// Раздача статических файлов из директории web
 	r.Handle("/*", http.FileServer(http.Dir(webDir)))
 }
 
+// writeJSON отправляет JSON-ответ с указанным статусом и данными.
+func writeJSON(w http.ResponseWriter, status int, data any) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
+}
+
+// auth является middleware для проверки JWT-токена в cookie и авторизации пользователя.
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pass := os.Getenv("TODO_PASSWORD")
+
 		if len(pass) > 0 {
 			var token string
 			var valid bool
@@ -62,8 +77,7 @@ func auth(next http.Handler) http.Handler {
 			}
 
 			if !valid {
-				// возвращаем ошибку авторизации 401
-				http.Error(w, "Authentification required", http.StatusUnauthorized)
+				writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Authentication required"})
 				return
 			}
 		}

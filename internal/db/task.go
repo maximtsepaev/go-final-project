@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Task описывает задачу планировщика.
 type Task struct {
 	ID      string `json:"id"`
 	Date    string `json:"date"`
@@ -13,6 +14,7 @@ type Task struct {
 	Repeat  string `json:"repeat"`
 }
 
+// AddTask сохраняет новую задачу и возвращает ее идентификатор.
 func AddTask(task *Task) (int64, error) {
 	var id int64
 
@@ -21,6 +23,7 @@ func AddTask(task *Task) (int64, error) {
 	}
 
 	query := "INSERT INTO scheduler (date, title, comment, repeat) VALUES (:date, :title, :comment, :repeat)"
+
 	res, err := DB.NamedExec(query, map[string]interface{}{
 		"date":    task.Date,
 		"title":   task.Title,
@@ -34,6 +37,7 @@ func AddTask(task *Task) (int64, error) {
 	return id, err
 }
 
+// Tasks возвращает список задач, отсортированный по дате.
 func Tasks(limit int) ([]*Task, error) {
 	var tasks []*Task
 
@@ -42,6 +46,7 @@ func Tasks(limit int) ([]*Task, error) {
 	}
 
 	query := "SELECT * FROM scheduler ORDER BY date LIMIT ?"
+
 	rows, err := DB.Queryx(query, limit)
 	if err != nil {
 		return nil, err
@@ -50,9 +55,11 @@ func Tasks(limit int) ([]*Task, error) {
 
 	for rows.Next() {
 		var task Task
+
 		if err := rows.StructScan(&task); err != nil {
 			return nil, err
 		}
+
 		tasks = append(tasks, &task)
 	}
 
@@ -63,6 +70,7 @@ func Tasks(limit int) ([]*Task, error) {
 	return tasks, nil
 }
 
+// SearchByKeyword ищет задачи по части заголовка или комментария.
 func SearchByKeyword(keyword string, limit int) ([]*Task, error) {
 	var tasks []*Task
 
@@ -78,21 +86,23 @@ func SearchByKeyword(keyword string, limit int) ([]*Task, error) {
 	}
 
 	query := "SELECT * FROM scheduler ORDER BY date LIMIT ?"
+
 	rows, err := DB.Queryx(query, limit)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
 		var task Task
+
 		if err := rows.StructScan(&task); err != nil {
 			return nil, err
 		}
 
 		title := strings.ToLower(task.Title)
 		comment := strings.ToLower(task.Comment)
+
 		if strings.Contains(title, keyword) || strings.Contains(comment, keyword) {
 			tasks = append(tasks, &task)
 		}
@@ -105,6 +115,7 @@ func SearchByKeyword(keyword string, limit int) ([]*Task, error) {
 	return tasks, nil
 }
 
+// SearchByDate ищет задачи по точной дате в формате DateFormat.
 func SearchByDate(date string, limit int) ([]*Task, error) {
 	var tasks []*Task
 
@@ -121,7 +132,6 @@ func SearchByDate(date string, limit int) ([]*Task, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
@@ -139,6 +149,7 @@ func SearchByDate(date string, limit int) ([]*Task, error) {
 	return tasks, nil
 }
 
+// GetTaskByID возвращает задачу по идентификатору.
 func GetTaskByID(id string) (*Task, error) {
 	var task Task
 
@@ -155,12 +166,14 @@ func GetTaskByID(id string) (*Task, error) {
 	return &task, nil
 }
 
+// UpdateTask обновляет все поля задачи.
 func UpdateTask(task *Task) error {
 	if DB == nil {
 		return ErrDBNotInitialized
 	}
 
 	query := "UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id"
+
 	row, err := DB.NamedExec(query, map[string]interface{}{
 		"id":      task.ID,
 		"date":    task.Date,
@@ -184,12 +197,14 @@ func UpdateTask(task *Task) error {
 	return nil
 }
 
+// UpdateDate обновляет только дату задачи.
 func UpdateDate(task *Task) error {
 	if DB == nil {
 		return ErrDBNotInitialized
 	}
 
 	query := "UPDATE scheduler SET date = :date WHERE id = :id"
+
 	row, err := DB.NamedExec(query, map[string]interface{}{
 		"date": task.Date,
 		"id":   task.ID,
@@ -210,12 +225,14 @@ func UpdateDate(task *Task) error {
 	return nil
 }
 
+// DeleteTask удаляет задачу по идентификатору.
 func DeleteTask(id string) error {
 	if DB == nil {
 		return ErrDBNotInitialized
 	}
 
 	query := "DELETE FROM scheduler WHERE id = ?"
+
 	row, err := DB.Exec(query, id)
 	if err != nil {
 		return err

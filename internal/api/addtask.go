@@ -9,10 +9,11 @@ import (
 	"github.com/maximtsepaev/go-final-project/internal/db"
 )
 
-// Функция для проверки и корректировки даты задачи
+// checkDate проверяет и устанавливает дату задачи, учитывая правило повторения.
 func checkDate(task *db.Task) error {
 	var next string
 	now := time.Now()
+
 	today, err := time.Parse(DateFormat, now.Format(DateFormat))
 	if err != nil {
 		return err
@@ -46,12 +47,7 @@ func checkDate(task *db.Task) error {
 	return nil
 }
 
-func writeJSON(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
-}
-
+// HandleAddTask создает новую задачу и возвращает ее идентификатор.
 func HandleAddTask(w http.ResponseWriter, r *http.Request) {
 	var task db.Task
 	var id int64
@@ -59,12 +55,12 @@ func HandleAddTask(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
 
 	if task.Title == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Title is required"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "title is required"})
 		return
 	}
 
@@ -77,7 +73,7 @@ func HandleAddTask(w http.ResponseWriter, r *http.Request) {
 	id, err = db.AddTask(&task)
 	if err != nil {
 		log.Println(err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 		return
 	}
 

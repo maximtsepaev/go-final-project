@@ -1,3 +1,4 @@
+// Command server запускает веб-сервер планировщика задач.
 package main
 
 import (
@@ -6,23 +7,22 @@ import (
 
 	"github.com/maximtsepaev/go-final-project/internal/db"
 	"github.com/maximtsepaev/go-final-project/internal/server"
-	// "github.com/go-chi/chi/v5" в будущем, понадобится более сложная маршрутизация
 )
 
+// main инициализирует базу данных и стартует сервер.
 func main() {
 	// Инициализация базы данных
+	// В будущем будет использоваться PostgreSQL, сделаю после защиты
 	dbFile := os.Getenv("TODO_DBFILE")
 	if dbFile == "" {
 		dbFile = "./scheduler.db"
 	}
 	if err := db.InitDB(dbFile); err != nil {
-		log.Fatal("Error initializing database:", err)
+		log.Fatal("error initializing database:", err)
 	}
 
 	// Запуск HTTP-сервера
 	if err := server.Run(); err != nil {
-		log.Fatal("Error starting server:", err)
+		log.Fatal("error starting server:", err)
 	}
-
-	// СДЕЛАТЬ ЗАДАНИЕ СО ЗВЕЗДОЧКОЙ NEXTDATE
 }

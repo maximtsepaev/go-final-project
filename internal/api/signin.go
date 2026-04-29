@@ -10,15 +10,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// signInInput представляет структуру данных для входа пользователя.
 type signInInput struct {
 	Password string `json:"password"`
 }
 
+// HandleSignIn проверяет пароль и возвращает JWT-токен.
 func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 	var input signInInput
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request body"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 		return
 	}
 
@@ -28,9 +30,8 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// СДЕЛАТЬ НА РУССКОМ ОШИБКИ
 	if input.Password != password {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Invalid password"})
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid password"})
 		return
 	}
 
@@ -42,7 +43,7 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 
 	tokenString, err := token.SignedString([]byte(password))
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to sign token"})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to sign token"})
 		return
 	}
 

@@ -115,3 +115,19 @@ docker run --rm -p 7540:7540 \
 ```
 
 4) Откройте в браузере http://localhost:7540
+
+## Документация (godoc)
+
+Запуск сервера документации:
+
+```bash
+godoc -http=:6060
+```
+
+Откройте в браузере http://localhost:6060/pkg/github.com/maximtsepaev/go-final-project/.
+
+Пакеты из `internal/` не показываются в общем списке. Их можно открыть по прямым ссылкам:
+
+- http://localhost:6060/pkg/github.com/maximtsepaev/go-final-project/internal/api/
+- http://localhost:6060/pkg/github.com/maximtsepaev/go-final-project/internal/db/
+- http://localhost:6060/pkg/github.com/maximtsepaev/go-final-project/internal/server/

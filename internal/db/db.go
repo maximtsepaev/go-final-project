@@ -1,3 +1,4 @@
+// Package db содержит слой доступа к SQLite для планировщика задач.
 package db
 
 import (
@@ -21,10 +22,13 @@ CREATE TABLE IF NOT EXISTS scheduler (
 CREATE INDEX IF NOT EXISTS date_index ON scheduler (date);
 `
 
-var DB *sqlx.DB                                                  // Глобальная переменная для доступа к базе данных
-var ErrDBNotInitialized = errors.New("Database not initialized") // Ошибка для случая, когда база данных не инициализирована
+// DB хранит подключение к базе данных SQLite.
+var DB *sqlx.DB
 
-// Инициализация базы данных, создание таблицы при первом запуске
+// ErrDBNotInitialized возвращается, если работа с БД идет до инициализации.
+var ErrDBNotInitialized = errors.New("database not initialized")
+
+// InitDB открывает базу и создает таблицу при первом запуске.
 func InitDB(dbFile string) error {
 	var err error
 

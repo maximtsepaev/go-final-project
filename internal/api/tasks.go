@@ -7,19 +7,21 @@ import (
 	"github.com/maximtsepaev/go-final-project/internal/db"
 )
 
+// TasksResp описывает список задач в ответе API.
 type TasksResp struct {
 	Tasks []*db.Task `json:"tasks"`
 }
 
-const maxTasks = 50
+const maxTasks = 50 // Максимальное количество задач, возвращаемое в одном запросе
 
+// HandleGetTasks возвращает список задач с учетом параметра search.
 func HandleGetTasks(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 
 	if params.Get("search") != "" {
 		param, err := time.Parse("02.01.2006", params.Get("search"))
 
-		// Если не удалось распарсить дату, ищем по ключевому слову
+		// Если не удалось распарсить дату (ошибка), ищем по ключевому слову
 		if err != nil {
 			tasks, err := db.SearchByKeyword(params.Get("search"), maxTasks)
 			if err != nil {
@@ -30,7 +32,6 @@ func HandleGetTasks(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusOK, TasksResp{
 				Tasks: tasks,
 			})
-
 			return
 		}
 
@@ -44,7 +45,6 @@ func HandleGetTasks(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, TasksResp{
 			Tasks: tasks,
 		})
-
 		return
 	}
 

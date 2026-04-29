@@ -1,3 +1,4 @@
+// Package server отвечает за запуск HTTP-сервера.
 package server
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/maximtsepaev/go-final-project/internal/api"
 )
 
+// Run настраивает роутер и запускает HTTP-сервер.
 func Run() error {
 	port := os.Getenv("TODO_PORT")
 	if port == "" {

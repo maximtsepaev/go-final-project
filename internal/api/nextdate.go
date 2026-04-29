@@ -9,17 +9,20 @@ import (
 )
 
 var (
-	EmptyStringError   = errors.New("empty string")
+	// EmptyStringError возвращается, когда правило повторения пустое.
+	EmptyStringError = errors.New("empty string")
+	// InvalidRepeatError возвращается при некорректном формате повтора.
 	InvalidRepeatError = errors.New("invalid repeat format")
-	InvalidDateError   = errors.New("invalid date format")
+	// InvalidDateError возвращается при некорректном формате даты.
+	InvalidDateError = errors.New("invalid date format")
 )
 
-// Функция для определения, находится ли дата после текущей
+// afterNow проверяет, наступила ли дата после текущего времени.
 func afterNow(date, now time.Time) bool {
 	return date.After(now)
 }
 
-// Функция для вычисления следующей даты повторения задачи
+// NextDate вычисляет следующую дату по правилу повторения.
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	var parts []string
 	var date time.Time
@@ -66,6 +69,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				break
 			}
 		}
+
 		return date.Format(DateFormat), nil
 
 	case "w":
@@ -100,12 +104,13 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		}
 
 	case "m":
-		if len(parts) < 2 {
-			return "", InvalidRepeatError
-		}
 		var days [32]bool
 		var months [13]bool
 		var lastDay, preLastDay, useMonths bool
+
+		if len(parts) < 2 {
+			return "", InvalidRepeatError
+		}
 
 		dlist := strings.Split(parts[1], ",")
 		for _, d := range dlist {
@@ -129,6 +134,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		if len(parts) == 3 {
 			useMonths = true
 			mlist := strings.Split(parts[2], ",")
+
 			for _, m := range mlist {
 				monthInt, err := strconv.Atoi(m)
 				if err != nil {
@@ -151,6 +157,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			if !afterNow(date, now) {
 				continue
 			}
+
 			if useMonths && !months[int(date.Month())] {
 				continue
 			}
@@ -165,6 +172,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	}
 }
 
+// HandleNextDate отвечает следующей датой в текстовом виде.
 func HandleNextDate(w http.ResponseWriter, r *http.Request) {
 	date := r.FormValue("date")
 	repeat := r.FormValue("repeat")
@@ -184,5 +192,3 @@ func HandleNextDate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(nextDate))
 }
-
-// ПРОВЕРИТЬ ПОКРЫТИЕ ОШИБОК ПО ТЗ

@@ -6,10 +6,11 @@ import (
 	"github.com/maximtsepaev/go-final-project/internal/db"
 )
 
+// HandleDeleteTask удаляет задачу по идентификатору.
 func HandleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Не указан идентификатор"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id is required"})
 		return
 	}
 
