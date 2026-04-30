@@ -39,10 +39,20 @@ func InitDB(dbFile string) error {
 	}
 
 	if _, err = DB.Exec(sqlSchema); err != nil {
+		_ = DB.Close()
 		return err
 	}
 
 	slog.Info("database initialized successfully")
 
 	return nil
+}
+
+// CloseDB закрывает подключение к базе данных.
+func CloseDB() error {
+	if DB == nil {
+		return ErrDBNotInitialized
+	}
+
+	return DB.Close()
 }

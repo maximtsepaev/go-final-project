@@ -190,5 +190,7 @@ func HandleNextDate(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(nextDate))
+	if _, err := w.Write([]byte(nextDate)); err != nil {
+		http.Error(w, "write nextdate response failed", http.StatusInternalServerError)
+	}
 }

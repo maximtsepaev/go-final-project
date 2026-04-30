@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -23,7 +22,6 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	password := os.Getenv("TODO_PASSWORD")
 	if len(password) == 0 {
 		writeJSON(w, http.StatusOK, map[string]string{"token": "noauth"})
 		return

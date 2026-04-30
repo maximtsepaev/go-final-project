@@ -18,10 +18,6 @@ type Task struct {
 func AddTask(task *Task) (int64, error) {
 	var id int64
 
-	if DB == nil {
-		return 0, ErrDBNotInitialized
-	}
-
 	query := "INSERT INTO scheduler (date, title, comment, repeat) VALUES (:date, :title, :comment, :repeat)"
 
 	res, err := DB.NamedExec(query, map[string]interface{}{
@@ -41,11 +37,7 @@ func AddTask(task *Task) (int64, error) {
 func Tasks(limit int) ([]*Task, error) {
 	var tasks []*Task
 
-	if DB == nil {
-		return nil, ErrDBNotInitialized
-	}
-
-	query := "SELECT * FROM scheduler ORDER BY date LIMIT ?"
+	query := "SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?"
 
 	rows, err := DB.Queryx(query, limit)
 	if err != nil {
@@ -62,6 +54,9 @@ func Tasks(limit int) ([]*Task, error) {
 
 		tasks = append(tasks, &task)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	if tasks == nil {
 		tasks = []*Task{}
@@ -74,10 +69,6 @@ func Tasks(limit int) ([]*Task, error) {
 func SearchByKeyword(keyword string, limit int) ([]*Task, error) {
 	var tasks []*Task
 
-	if DB == nil {
-		return nil, ErrDBNotInitialized
-	}
-
 	keyword = strings.ToLower(strings.TrimSpace(keyword))
 
 	// Если ключевое слово пустое (пр. search == "    "), возвращаем все задачи
@@ -85,7 +76,7 @@ func SearchByKeyword(keyword string, limit int) ([]*Task, error) {
 		return Tasks(limit)
 	}
 
-	query := "SELECT * FROM scheduler ORDER BY date LIMIT ?"
+	query := "SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?"
 
 	rows, err := DB.Queryx(query, limit)
 	if err != nil {
@@ -107,6 +98,9 @@ func SearchByKeyword(keyword string, limit int) ([]*Task, error) {
 			tasks = append(tasks, &task)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	if tasks == nil {
 		tasks = []*Task{}
@@ -119,11 +113,7 @@ func SearchByKeyword(keyword string, limit int) ([]*Task, error) {
 func SearchByDate(date string, limit int) ([]*Task, error) {
 	var tasks []*Task
 
-	if DB == nil {
-		return nil, ErrDBNotInitialized
-	}
-
-	query := "SELECT * FROM scheduler WHERE date = :date LIMIT :limit"
+	query := "SELECT id, date, title, comment, repeat FROM scheduler WHERE date = :date LIMIT :limit"
 
 	rows, err := DB.NamedQuery(query, map[string]interface{}{
 		"date":  date,
@@ -141,6 +131,9 @@ func SearchByDate(date string, limit int) ([]*Task, error) {
 		}
 		tasks = append(tasks, &task)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	if tasks == nil {
 		tasks = []*Task{}
@@ -153,11 +146,7 @@ func SearchByDate(date string, limit int) ([]*Task, error) {
 func GetTaskByID(id string) (*Task, error) {
 	var task Task
 
-	if DB == nil {
-		return nil, ErrDBNotInitialized
-	}
-
-	query := "SELECT * FROM scheduler WHERE id = ?"
+	query := "SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?"
 
 	if err := DB.QueryRowx(query, id).StructScan(&task); err != nil {
 		return nil, err
@@ -168,10 +157,6 @@ func GetTaskByID(id string) (*Task, error) {
 
 // UpdateTask обновляет все поля задачи.
 func UpdateTask(task *Task) error {
-	if DB == nil {
-		return ErrDBNotInitialized
-	}
-
 	query := "UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id"
 
 	row, err := DB.NamedExec(query, map[string]interface{}{
@@ -199,10 +184,6 @@ func UpdateTask(task *Task) error {
 
 // UpdateDate обновляет только дату задачи.
 func UpdateDate(task *Task) error {
-	if DB == nil {
-		return ErrDBNotInitialized
-	}
-
 	query := "UPDATE scheduler SET date = :date WHERE id = :id"
 
 	row, err := DB.NamedExec(query, map[string]interface{}{
@@ -227,10 +208,6 @@ func UpdateDate(task *Task) error {
 
 // DeleteTask удаляет задачу по идентификатору.
 func DeleteTask(id string) error {
-	if DB == nil {
-		return ErrDBNotInitialized
-	}
-
 	query := "DELETE FROM scheduler WHERE id = ?"
 
 	row, err := DB.Exec(query, id)

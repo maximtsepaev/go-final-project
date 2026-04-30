@@ -1,4 +1,4 @@
-FROM golang:1.25.5 AS builder
+FROM golang:1.25.5-alpine AS builder
 
 WORKDIR /src
 
@@ -8,7 +8,7 @@ RUN go mod download
 COPY . .
 RUN GOOS=linux GOARCH=amd64 go build -o /out/todo ./cmd/server
 
-FROM ubuntu:latest
+FROM alpine:3.20
 
 WORKDIR /app
 
@@ -17,7 +17,5 @@ ENV TODO_DBFILE=/app/scheduler.db
 
 COPY --from=builder /out/todo ./todo
 COPY web ./web
-
-EXPOSE 7540
 
 CMD ["./todo"]

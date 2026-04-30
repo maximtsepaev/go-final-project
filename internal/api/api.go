@@ -20,6 +20,7 @@ const webDir = "./web" // Путь к директории с веб-ресур�
 // DateFormat задает формат даты для хранения и обработки (ГГГГММДД).
 const DateFormat = "20060102"
 
+var password string     // Значение TODO_PASSWORD
 var passwordHash string // SHA256 хэш пароля
 
 // Init регистрирует маршруты API и раздачу статических файлов.
@@ -55,10 +56,9 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 // а также для его проверки в middleware auth, но только в том случае,
 // если переменная окружения TODO_PASSWORD установлена.
 func init() {
-	pass := os.Getenv("TODO_PASSWORD")
-
-	if pass != "" {
-		hash := sha256.Sum256([]byte(pass))
+	password = os.Getenv("TODO_PASSWORD")
+	if password != "" {
+		hash := sha256.Sum256([]byte(password))
 		passwordHash = hex.EncodeToString(hash[:])
 	}
 }
@@ -68,8 +68,7 @@ func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var token string
 		var valid bool
-		pass := os.Getenv("TODO_PASSWORD")
-		if len(pass) == 0 {
+		if len(password) == 0 {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -87,7 +86,7 @@ func auth(next http.Handler) http.Handler {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid signing method")
 			}
-			return []byte(pass), nil
+			return []byte(password), nil
 		})
 		if err == nil && jwtToken.Valid {
 			exp, ok := claims["exp"].(float64)
