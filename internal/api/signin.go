@@ -1,11 +1,10 @@
 package api
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -35,10 +34,9 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	passwordHash := sha256.Sum256([]byte(password))
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"hash": hex.EncodeToString(passwordHash[:]),
+		"hash": passwordHash,
+		"exp":  time.Now().Add(8 * time.Hour).Unix(), // Для безопасности, несмотря на то, что фронт устанавливает лайф тайм куки
 	})
 
 	tokenString, err := token.SignedString([]byte(password))

@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
@@ -18,6 +19,8 @@ const webDir = "./web" // Путь к директории с веб-ресур�
 
 // DateFormat задает формат даты для хранения и обработки (ГГГГММДД).
 const DateFormat = "20060102"
+
+var passwordHash string // SHA256 хэш пароля
 
 // Init регистрирует маршруты API и раздачу статических файлов.
 func Init(r chi.Router) {
@@ -48,42 +51,62 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 	json.NewEncoder(w).Encode(data)
 }
 
+// init выполняется при загрузке пакета и вычисляет хэш пароля для генерации JWT-токена,
+// а также для его проверки в middleware auth, но только в том случае,
+// если переменная окружения TODO_PASSWORD установлена.
+func init() {
+	pass := os.Getenv("TODO_PASSWORD")
+
+	if pass != "" {
+		hash := sha256.Sum256([]byte(pass))
+		passwordHash = hex.EncodeToString(hash[:])
+	}
+}
+
 // auth является middleware для проверки JWT-токена в cookie и авторизации пользователя.
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var token string
+		var valid bool
 		pass := os.Getenv("TODO_PASSWORD")
+		if len(pass) == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
 
-		if len(pass) > 0 {
-			var token string
-			var valid bool
+		cookie, err := r.Cookie("token")
+		if err != nil || cookie.Value == "" {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "authentication required"})
+			return
+		}
 
-			cookie, err := r.Cookie("token")
-			if err == nil {
-				token = cookie.Value
+		token = cookie.Value
+
+		claims := jwt.MapClaims{}
+		jwtToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New("invalid signing method")
 			}
-
-			expectedHash := sha256.Sum256([]byte(pass))
-			expectedHashHex := hex.EncodeToString(expectedHash[:])
-
-			claims := jwt.MapClaims{}
-			jwtToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, errors.New("Invalid signing method")
-				}
-				return []byte(pass), nil
-			})
-			if err == nil && jwtToken.Valid {
-				hashClaim, ok := claims["hash"].(string)
-				if ok && hashClaim == expectedHashHex {
-					valid = true
-				}
-			}
-
-			if !valid {
-				writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Authentication required"})
+			return []byte(pass), nil
+		})
+		if err == nil && jwtToken.Valid {
+			exp, ok := claims["exp"].(float64)
+			if !ok || time.Now().Unix() > int64(exp) {
+				writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "token expired"})
 				return
 			}
+
+			hashClaim, ok := claims["hash"].(string)
+			if ok && hashClaim == passwordHash {
+				valid = true
+			}
 		}
+
+		if !valid {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "authentication required"})
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
