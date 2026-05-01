@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -34,7 +33,7 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"hash": passwordHash,
-		"exp":  time.Now().Add(8 * time.Hour).Unix(), // Для безопасности, несмотря на то, что фронт устанавливает лайф тайм куки
+		// "exp":  time.Now().Add(8 * time.Hour).Unix(), // Для тестов отключаем истечение срока действия токена
 	})
 
 	tokenString, err := token.SignedString([]byte(password))

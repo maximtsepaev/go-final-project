@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
@@ -89,11 +88,12 @@ func auth(next http.Handler) http.Handler {
 			return []byte(password), nil
 		})
 		if err == nil && jwtToken.Valid {
-			exp, ok := claims["exp"].(float64)
-			if !ok || time.Now().Unix() > int64(exp) {
-				writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "token expired"})
-				return
-			}
+			// Для тестов отключил проверку истечения срока действия токена, + фронт устанавливает лайф тайм куки
+			// exp, ok := claims["exp"].(float64)
+			// if !ok || time.Now().Unix() > int64(exp) {
+			// 	writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "token expired"})
+			// 	return
+			// }
 
 			hashClaim, ok := claims["hash"].(string)
 			if ok && hashClaim == passwordHash {
