@@ -33,7 +33,7 @@ func main() {
 	slog.Info("initializing", "db_file", dbFile) // Нет смысла использовать slog.With
 	if err := db.InitDB(dbFile); err != nil {
 		slog.Error("database init failed", "error", err)
-		os.Exit(1)
+		return
 	}
 	defer func() {
 		if err := db.CloseDB(); err != nil {
@@ -44,6 +44,6 @@ func main() {
 	// Запуск HTTP-сервера
 	if err := server.Run(); err != nil {
 		slog.Error("server start failed", "error", err)
-		os.Exit(1)
+		return
 	}
 }
