@@ -66,9 +66,17 @@ go run ./...
 
 2) Запустите тесты (перед запуском тестов задайте переменную окружения `DATABASE_URL`):
 
-```bash
+Пример для Windows PowerShell:
+
+```powershell
 $env:DATABASE_URL="postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 go test ./tests
+```
+
+Пример для bash:
+
+```bash
+DATABASE_URL="postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" go test ./tests
 ```
 
 ## Запуск в Docker
