@@ -1,7 +1,7 @@
 package tests
 
 var Port = 7540
-var DBFile = "../scheduler.db"
+var DBFile = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 var FullNextDate = true
 var Search = true
 

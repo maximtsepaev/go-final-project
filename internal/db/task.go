@@ -1,7 +1,9 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
+	"strconv"
 	"strings"
 )
 
@@ -18,18 +20,9 @@ type Task struct {
 func AddTask(task *Task) (int64, error) {
 	var id int64
 
-	query := "INSERT INTO scheduler (date, title, comment, repeat) VALUES (:date, :title, :comment, :repeat)"
+	query := "INSERT INTO scheduler (date, title, comment, repeat) VALUES ($1, $2, $3, $4) RETURNING id"
 
-	res, err := DB.NamedExec(query, map[string]interface{}{
-		"date":    task.Date,
-		"title":   task.Title,
-		"comment": task.Comment,
-		"repeat":  task.Repeat,
-	})
-	if err == nil {
-		id, err = res.LastInsertId()
-	}
-
+	err := DB.QueryRow(query, task.Date, task.Title, task.Comment, task.Repeat).Scan(&id)
 	return id, err
 }
 
@@ -37,7 +30,7 @@ func AddTask(task *Task) (int64, error) {
 func Tasks(limit int) ([]*Task, error) {
 	var tasks []*Task
 
-	query := "SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?"
+	query := "SELECT CAST(id AS TEXT) AS id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT $1"
 
 	rows, err := DB.Queryx(query, limit)
 	if err != nil {
@@ -76,7 +69,7 @@ func SearchByKeyword(keyword string, limit int) ([]*Task, error) {
 		return Tasks(limit)
 	}
 
-	query := "SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?"
+	query := "SELECT CAST(id AS TEXT) AS id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT $1"
 
 	rows, err := DB.Queryx(query, limit)
 	if err != nil {
@@ -113,7 +106,7 @@ func SearchByKeyword(keyword string, limit int) ([]*Task, error) {
 func SearchByDate(date string, limit int) ([]*Task, error) {
 	var tasks []*Task
 
-	query := "SELECT id, date, title, comment, repeat FROM scheduler WHERE date = :date LIMIT :limit"
+	query := "SELECT CAST(id AS TEXT) AS id, date, title, comment, repeat FROM scheduler WHERE date = :date LIMIT :limit"
 
 	rows, err := DB.NamedQuery(query, map[string]interface{}{
 		"date":  date,
@@ -146,9 +139,14 @@ func SearchByDate(date string, limit int) ([]*Task, error) {
 func GetTaskByID(id string) (*Task, error) {
 	var task Task
 
-	query := "SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?"
+	idVal, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, sql.ErrNoRows
+	}
 
-	if err := DB.QueryRowx(query, id).StructScan(&task); err != nil {
+	query := "SELECT CAST(id AS TEXT) AS id, date, title, comment, repeat FROM scheduler WHERE id = $1"
+
+	if err := DB.QueryRowx(query, idVal).StructScan(&task); err != nil {
 		return nil, err
 	}
 
@@ -157,10 +155,15 @@ func GetTaskByID(id string) (*Task, error) {
 
 // UpdateTask обновляет все поля задачи.
 func UpdateTask(task *Task) error {
-	query := "UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id"
+	idVal, err := strconv.ParseInt(task.ID, 10, 64)
+	if err != nil {
+		return errors.New("Неверный ID задачи")
+	}
+
+	query := "UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id_int"
 
 	row, err := DB.NamedExec(query, map[string]interface{}{
-		"id":      task.ID,
+		"id_int":  idVal,
 		"date":    task.Date,
 		"title":   task.Title,
 		"comment": task.Comment,
@@ -184,11 +187,16 @@ func UpdateTask(task *Task) error {
 
 // UpdateDate обновляет только дату задачи.
 func UpdateDate(task *Task) error {
-	query := "UPDATE scheduler SET date = :date WHERE id = :id"
+	idVal, err := strconv.ParseInt(task.ID, 10, 64)
+	if err != nil {
+		return errors.New("Неверный ID задачи")
+	}
+
+	query := "UPDATE scheduler SET date = :date WHERE id = :id_int"
 
 	row, err := DB.NamedExec(query, map[string]interface{}{
-		"date": task.Date,
-		"id":   task.ID,
+		"id_int": idVal,
+		"date":   task.Date,
 	})
 	if err != nil {
 		return err
@@ -208,9 +216,14 @@ func UpdateDate(task *Task) error {
 
 // DeleteTask удаляет задачу по идентификатору.
 func DeleteTask(id string) error {
-	query := "DELETE FROM scheduler WHERE id = ?"
+	idVal, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return errors.New("Неверный ID задачи")
+	}
 
-	row, err := DB.Exec(query, id)
+	query := "DELETE FROM scheduler WHERE id = $1"
+
+	row, err := DB.Exec(query, idVal)
 	if err != nil {
 		return err
 	}

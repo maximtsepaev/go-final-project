@@ -1,4 +1,4 @@
-// Package db содержит слой доступа к SQLite для планировщика задач.
+// Package db содержит слой доступа к PostgreSQL для планировщика задач.
 package db
 
 import (
@@ -7,14 +7,14 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/lib/pq"
 )
 
 // Схема базы данных
 const sqlSchema = ` 
 CREATE TABLE IF NOT EXISTS scheduler (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date CHAR(8) NOT NULL DEFAULT "",
+    id SERIAL PRIMARY KEY,
+    date CHAR(8) NOT NULL DEFAULT '',
     title VARCHAR(256) NOT NULL,
     comment TEXT,
     repeat VARCHAR(128)
@@ -23,18 +23,23 @@ CREATE TABLE IF NOT EXISTS scheduler (
 CREATE INDEX IF NOT EXISTS date_index ON scheduler (date);
 `
 
-// DB хранит подключение к базе данных SQLite.
+// DB хранит подключение к базе данных PostgreSQL.
 var DB *sqlx.DB
 
 // ErrDBNotInitialized возвращается, если работа с БД идет до инициализации.
 var ErrDBNotInitialized = errors.New("database not initialized")
 
 // InitDB открывает базу и создает таблицу при первом запуске.
-func InitDB(dbFile string) error {
+func InitDB(dsn string) error {
 	var err error
 
-	DB, err = sqlx.Open("sqlite", dbFile)
+	DB, err = sqlx.Open("postgres", dsn)
 	if err != nil {
+		return err
+	}
+
+	if err = DB.Ping(); err != nil {
+		_ = DB.Close()
 		return err
 	}
 

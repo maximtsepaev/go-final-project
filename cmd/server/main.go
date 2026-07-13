@@ -24,14 +24,14 @@ func main() {
 	slog.Info("app starting")
 
 	// Инициализация базы данных
-	// В будущем будет использоваться PostgreSQL, сделаю после защиты
-	dbFile := os.Getenv("TODO_DBFILE")
-	if dbFile == "" {
-		dbFile = "./scheduler.db"
+	dbDSN := os.Getenv("DATABASE_URL")
+	if dbDSN == "" {
+		slog.Error("database connection DSN (DATABASE_URL) is required but not set")
+		os.Exit(1)
 	}
 
-	slog.Info("initializing", "db_file", dbFile) // Нет смысла использовать slog.With
-	if err := db.InitDB(dbFile); err != nil {
+	slog.Info("initializing database", "dsn", dbDSN)
+	if err := db.InitDB(dbDSN); err != nil {
 		slog.Error("database init failed", "error", err)
 		os.Exit(1)
 	}

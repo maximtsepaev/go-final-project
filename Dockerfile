@@ -13,7 +13,6 @@ FROM alpine:3.20
 WORKDIR /app
 
 ENV TODO_PORT=7540
-ENV TODO_DBFILE=/app/scheduler.db
 
 COPY --from=builder /out/todo ./todo
 COPY web ./web
